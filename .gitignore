@@ -1,0 +1,7 @@
+# Directories
+iso/
+packer_cache/
+software/
+
+# Files
+packerlog.txt
