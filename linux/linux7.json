@@ -5,6 +5,8 @@
     "iso_checksum": "",
     "iso_checksum_type": "",
     "iso_url": "",
+    "java_jdk_file": "",
+    "jboss_eap_file": "",
     "network_device": "",
     "os_disk_size": "",
     "output_dir": "",
@@ -30,6 +32,31 @@
       "type": "file",
       "source": "scripts/ps1.sh",
       "destination": "/etc/profile.d/"
+    },
+    {
+      "type": "file",
+      "source": "software/hello.war",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "{{user `java_jdk_file`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "{{user `jboss_eap_file`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "scripts/jboss-eap.conf",
+      "destination": "/etc/default/"
+    },
+    {
+      "type": "file",
+      "source": "scripts/jbosseap7.service",
+      "destination": "/etc/systemd/system/"
     },
     {
       "type": "shell",
@@ -79,7 +106,8 @@
         ["modifyvm", "{{.Name}}", "--natpf1", "port22,tcp,127.0.0.1,22,10.0.2.15,22"],
         ["modifyvm", "{{.Name}}", "--natpf1", "port80,tcp,127.0.0.1,80,10.0.2.15,80"],
         ["modifyvm", "{{.Name}}", "--natpf1", "port443,tcp,127.0.0.1,443,10.0.2.15,443"],
-        ["modifyvm", "{{.Name}}", "--natpf1", "port8080,tcp,127.0.0.1,8080,10.0.2.15,8080"]
+        ["modifyvm", "{{.Name}}", "--natpf1", "port8080,tcp,127.0.0.1,8080,10.0.2.15,8080"],
+        ["modifyvm", "{{.Name}}", "--natpf1", "port9990,tcp,127.0.0.1,9990,10.0.2.15,9990"]
       ],
       "vm_name": "{{user `vm_name`}}"
     }

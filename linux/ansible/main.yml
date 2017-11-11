@@ -6,6 +6,7 @@
   vars:
     ip_end: 24
     ip_start: 16
+    jboss_eap_user: jboss
     network: 10.0.2
     routing_prefix: 24
 
@@ -14,12 +15,13 @@
       - subversion
       - yum-cron
       - yum-plugin-fastestmirror
+      - yum-utils
 
   tasks:
     - name: OS info
       debug:
         msg:  |
-              ansible_os_family            = {{ ansible_os_family  }}
+              ansible_os_family            = {{ ansible_os_family }}
               ansible_distribution         = {{ ansible_distribution }}
               ansible_distribution_version = {{ ansible_distribution_version }}
               ansible_distribution_release = {{ ansible_distribution_release }}
@@ -46,6 +48,49 @@
       when: ansible_distribution == 'OracleLinux'
       tags:
         - oel-repos
+
+    ###############################################################################
+    # Harden
+    ###############################################################################
+    - name: Set default umask to 027
+      replace:
+        dest=/etc/profile
+        regexp="umask 0.."
+        replace="umask 027"
+        backup=yes
+      tags:
+        - harden
+
+    ###############################################################################
+    # Harden root
+    ###############################################################################
+    - name: Delete password from root
+      command: "passwd -d root"
+      tags:
+        - harden-root
+
+    ###############################################################################
+    # Harden ssh
+    ###############################################################################
+    - name: Harden ssh
+      block:
+        - name: sshd - Disallow password authentication
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PasswordAuthentication"
+            line: "PasswordAuthentication no"
+            state: present
+          notify: Restart sshd
+
+        - name: sshd - Disallow root SSH login
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PermitRootLogin"
+            line: "PermitRootLogin no"
+            state: present
+          notify: Restart sshd
+      tags:
+        - harden-ssh
 
     ###############################################################################
     # Install docker
@@ -115,12 +160,96 @@
     ###############################################################################
     - name: Install JBoss EAP
       block:
-        - name: Unpack Java
+        - name: Install maven
+          yum:
+            name: maven
+            state: present
+
+        - name: Create jboss user
+          user:
+            name: "{{ jboss_eap_user }}"
+
+        - name: Set up sudo the {{ jboss_eap_user }} user
+          blockinfile:
+            dest: /etc/sudoers
+            insertafter: EOF
+            marker: "## {mark} ansible jboss user block"
+            block: |
+              Cmnd_Alias SYSTEMD = /usr/bin/journalctl, /usr/bin/systemctl start jbosseap7, /usr/bin/systemctl restart jbosseap7, /usr/bin/systemctl stop jbosseap7
+              jboss ALL = NOPASSWD:SYSTEMD
+    
+        - name: Insert call of jboss-eap.conf in .bashrc
+          blockinfile:
+            dest: /home/{{ jboss_eap_user }}/.bashrc
+            insertafter: EOF
+            marker: "## {mark} ansible jboss eap block"
+            block: |
+              . /etc/default/jboss-eap.conf
+
+        - name: Create product directory
+          file:
+            path: /data/app/redhat/product
+            state: directory
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+            mode: ug=rwx,o=
+
+        - name: Create logs directory
+          file:
+            path: /data/logs/jboss-eap
+            state: directory
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+            mode: ug=rwx,o=
+
+        - name: Unpack Java JDK
           unarchive:
-            src: "../software/{{ java_file }}"
-            dest: /data/java
-            owner: cc360
-            group: cc360
+            src: /usr/tmp/jdk-8u144-linux-x64.tar.gz
+            dest: /data/app/redhat/product
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Create soft links to Java directory
+          file:
+            src: /data/app/redhat/product/jdk1.8.0_144
+            path: /data/app/redhat/product/java_current
+            state: link
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Unpack JBoss EAP
+          unarchive:
+            src: /usr/tmp/jboss-eap-7.0.0.zip
+            dest: /data/app/redhat/product
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Create soft links to EAP directory
+          file:
+            src: /data/app/redhat/product/jboss-eap-7.0
+            path: /data/app/redhat/product/jboss_current
+            state: link
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Add JBoss EAP users
+          command: "/data/app/redhat/product/jboss_current/bin/add-user.sh -u 'eapmgr' -p 'manager1' -g 'mgmtgroup'"
+
+        - name: jbosseap7 should start a boot
+          systemd:
+            name: jbosseap7
+            enabled: yes
+            state: restarted
+
+        - name: Deploy hello.war
+          copy:
+            src: /usr/tmp/hello.war
+            dest: /data/app/redhat/product/jboss_current/standalone/deployments/
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Remove uploaded software
+          command: "rm -rf /usr/tmp/*"
 
       tags:
         - jboss-eap
@@ -161,51 +290,8 @@
           with_items:
             - {re: "^ *User_Alias +SUDOROOT *=", line: "User_Alias SUDOROOT={{user_string}}"}
             - {re: "^ *SUDOROOT ", line: "SUDOROOT ALL=(ALL) NOPASSWD:ALL"}
-          tags:
-            - users-with-pk
-
-    ###############################################################################
-    # Harden
-    ###############################################################################
-    - name: Set default umask to 027
-      replace:
-        dest=/etc/profile
-        regexp="umask 0.."
-        replace="umask 027"
-        backup=yes
       tags:
-        - harden
-
-    ###############################################################################
-    # Harden root
-    ###############################################################################
-    - name: Delete password from root
-      command: "passwd -d root"
-      tags:
-        - harden-root
-
-    ###############################################################################
-    # Harden ssh
-    ###############################################################################
-    - name: Harden ssh
-      block:
-        - name: sshd - Disallow password authentication
-          lineinfile:
-            dest: /etc/ssh/sshd_config
-            regexp: "^PasswordAuthentication"
-            line: "PasswordAuthentication no"
-            state: present
-          notify: Restart sshd
-
-        - name: sshd - Disallow root SSH login
-          lineinfile:
-            dest: /etc/ssh/sshd_config
-            regexp: "^PermitRootLogin"
-            line: "PermitRootLogin no"
-            state: present
-          notify: Restart sshd
-      tags:
-        - harden-ssh
+        - users-with-pk
 
     ###############################################################################
     # Add extra IPs
@@ -220,7 +306,12 @@
     # yum update
     ###############################################################################
     - name: Upgrade all packages
-      yum: name=* state=latest
+      block:
+        - name: Upgrade all packages
+          yum: name=* state=latest
+
+        - name: Remove old kernels
+          command: package-cleanup --oldkernels --count=2
       tags:
         - yum-update
 
