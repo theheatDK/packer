@@ -175,7 +175,7 @@
             insertafter: EOF
             marker: "## {mark} ansible jboss user block"
             block: |
-              Cmnd_Alias SYSTEMD = /usr/bin/journalctl, /usr/bin/systemctl start jbosseap7, /usr/bin/systemctl restart jbosseap7, /usr/bin/systemctl stop jbosseap7
+              Cmnd_Alias SYSTEMD = /usr/bin/journalctl, /usr/bin/systemctl start jbosseap6, /usr/bin/systemctl restart jbosseap6, /usr/bin/systemctl stop jbosseap6
               jboss ALL = NOPASSWD:SYSTEMD
     
         - name: Insert call of jboss-eap.conf in .bashrc
@@ -217,27 +217,61 @@
             owner: "{{ jboss_eap_user }}"
             group: "{{ jboss_eap_user }}"
 
+        - name: Block access to default Java
+          shell: |
+            chmod a-rx /etc/alternatives/java
+            chmod a-rx /usr/bin/java
+
         - name: Unpack JBoss EAP
           unarchive:
-            src: /usr/tmp/jboss-eap-7.0.0.zip
+            src: /usr/tmp/jboss-eap-6.4.0.zip
             dest: /data/app/redhat/product
             owner: "{{ jboss_eap_user }}"
             group: "{{ jboss_eap_user }}"
 
         - name: Create soft links to EAP directory
           file:
-            src: /data/app/redhat/product/jboss-eap-7.0
+            src: /data/app/redhat/product/jboss-eap-6.4
             path: /data/app/redhat/product/jboss_current
             state: link
             owner: "{{ jboss_eap_user }}"
             group: "{{ jboss_eap_user }}"
 
-        - name: Add JBoss EAP users
-          command: "/data/app/redhat/product/jboss_current/bin/add-user.sh -u 'eapmgr' -p 'manager1' -g 'mgmtgroup'"
+        - name: Apply EAP patch 09
+          command: "/data/app/redhat/product/jboss_current/bin/jboss-cli.sh 'patch apply /usr/tmp/jboss-eap-6.4.9-patch.zip'"
+          become_user: "{{ jboss_eap_user }}"
 
-        - name: jbosseap7 should start a boot
+        - name: Apply EAP patch 17
+          command: "/data/app/redhat/product/jboss_current/bin/jboss-cli.sh 'patch apply /usr/tmp/jboss-eap-6.4.17-patch.zip'"
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Install fuse
+          shell: |
+            cd /data/app/redhat/product/jboss_current
+            /data/app/redhat/product/java_current/bin/java -jar /usr/tmp/fuse-eap-installer-6.3.0.redhat-262.jar
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Add JBoss EAP users
+          command: "/data/app/redhat/product/jboss_current/bin/add-user.sh -u 'eapmgr' -p 'manager1.' -g 'mgmtgroup'"
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Change server.log location
+          replace:
+            dest: /data/app/redhat/product/jboss_current/standalone/configuration/logging.properties
+            regexp: "handler.FILE.fileName=.*"
+            replace: 'handler.FILE.fileName=data/logs/jboss-eap/server.log'
+
+        - name: Copy jboss-as-standalone.sh
+          copy:
+            src: /usr/tmp/jboss-as-standalone.sh
+            dest: /data/app/redhat/product/jboss_current/bin/init.d/
+            backup: yes
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: jbosseap6 should start a boot
           systemd:
-            name: jbosseap7
+            name: jbosseap6
             enabled: yes
             state: restarted
 

@@ -5,8 +5,11 @@
     "iso_checksum": "",
     "iso_checksum_type": "",
     "iso_url": "",
-    "java_jdk_file": "",
-    "jboss_eap_file": "",
+    "java_jdk": "",
+    "jboss_eap": "",
+    "jboss_eap_patch09": "",
+    "jboss_eap_patch17": "",
+    "jboss_fuse": "",
     "network_device": "",
     "os_disk_size": "",
     "output_dir": "",
@@ -35,17 +38,37 @@
     },
     {
       "type": "file",
+      "source": "scripts/jboss-as-standalone.sh",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
       "source": "software/hello.war",
       "destination": "/usr/tmp/"
     },
     {
       "type": "file",
-      "source": "{{user `java_jdk_file`}}",
+      "source": "{{user `java_jdk`}}",
       "destination": "/usr/tmp/"
     },
     {
       "type": "file",
-      "source": "{{user `jboss_eap_file`}}",
+      "source": "{{user `jboss_eap`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "{{user `jboss_eap_patch09`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "{{user `jboss_eap_patch17`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "{{user `jboss_fuse`}}",
       "destination": "/usr/tmp/"
     },
     {
@@ -55,7 +78,7 @@
     },
     {
       "type": "file",
-      "source": "scripts/jbosseap7.service",
+      "source": "scripts/jbosseap6.service",
       "destination": "/etc/systemd/system/"
     },
     {
