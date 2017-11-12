@@ -217,11 +217,6 @@
             owner: "{{ jboss_eap_user }}"
             group: "{{ jboss_eap_user }}"
 
-        - name: Block access to default Java
-          shell: |
-            chmod a-rx /etc/alternatives/java
-            chmod a-rx /usr/bin/java
-
         - name: Unpack JBoss EAP
           unarchive:
             src: /usr/tmp/jboss-eap-6.4.0.zip
@@ -285,6 +280,10 @@
         - name: Remove uploaded software
           command: "rm -rf /usr/tmp/*"
 
+        - name: Block access to default Java
+          shell: |
+            chmod a-rx /etc/alternatives/java
+            chmod a-rx /usr/bin/java
       tags:
         - jboss-eap
 
