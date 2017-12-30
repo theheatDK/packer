@@ -16,6 +16,10 @@
       - yum-cron
       - yum-plugin-fastestmirror
       - yum-utils
+      
+    oel_packages:
+      - kmod-vboxguest-uek4
+      - vboxguest-tools      
 
   tasks:
     - name: OS info
@@ -48,6 +52,19 @@
       when: ansible_distribution == 'OracleLinux'
       tags:
         - oel-repos
+
+    ###############################################################################
+    # Install OEL packages
+    ###############################################################################
+    - name: Install OEL packages
+      block:
+        - name: Install OEL packages
+          yum:
+            name: "{{ oel_packages }}"
+            state: present
+      when: ansible_distribution == 'OracleLinux'
+      tags:
+        - oel-packages
 
     ###############################################################################
     # Harden
