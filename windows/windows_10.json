@@ -5,8 +5,8 @@
     "iso_checksum": "3D39DD9BD37DB5B3C80801AE44003802A9C770A7400A1B33027CA474A1A7C691",
     "autounattend": "./answer_files/10-EE-EVAL/Autounattend.xml",
     "headless": "false",
-    "cpus": "2",
-    "memory_size": "2048",
+    "cpus": "3",
+    "memory_size": "8192",
     "disk_size": "61440"
   },
   "builders": [
@@ -17,6 +17,8 @@
       "iso_checksum": "{{user `iso_checksum`}}",
       "headless": "{{user `headless`}}",
       "boot_wait": "2m",
+      "output_directory": "E:/packer-out/win10",
+      "name": "win10",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant",
       "ssh_wait_timeout": "2h",
@@ -31,18 +33,12 @@
         "./scripts/openssh.ps1"
       ],
       "vboxmanage": [
-        [
-          "modifyvm",
-          "{{.Name}}",
-          "--memory",
-          "{{user `memory_size`}}"
-        ],
-        [
-          "modifyvm",
-          "{{.Name}}",
-          "--cpus",
-          "{{user `cpus`}}"
-        ]
+        ["modifyvm", "{{.Name}}", "--accelerate2dvideo", "on"],
+        ["modifyvm", "{{.Name}}", "--clipboard",         "bidirectional"],
+        ["modifyvm", "{{.Name}}", "--cpus",              "{{user `cpus`}}"],
+        ["modifyvm", "{{.Name}}", "--draganddrop",       "hosttoguest"],
+        ["modifyvm", "{{.Name}}", "--memory",            "{{user `memory_size`}}"],
+        ["modifyvm", "{{.Name}}", "--vram",              "128"]
       ]
     }
   ],
