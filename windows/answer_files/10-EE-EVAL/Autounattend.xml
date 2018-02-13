@@ -91,6 +91,14 @@
             <UserLocale>da-DK</UserLocale>
         </component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <ShowPowerButtonOnStartScreen>true</ShowPowerButtonOnStartScreen>
+            <DesktopOptimization>
+                 <GoToDesktopOnSignIn>false</GoToDesktopOnSignIn>
+                 <ShowWindowsStoreAppsOnTaskbar>false</ShowWindowsStoreAppsOnTaskbar>
+            </DesktopOptimization>
+            <TaskbarLinks>
+               <Link0>%AppData%\Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk</Link0>
+            </TaskbarLinks>
             <UserAccounts>
                 <AdministratorPassword>
                     <Value>vagrant</Value>
@@ -262,6 +270,28 @@
                     <Order>24</Order>
                     <Description>Disable password expiration for vagrant user</Description>
                 </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\SOFTWARE\Policies\Microsoft\Windows\Explorer\ /v NoPinningStoreToTaskbar /t REG_DWORD /d 0 /f</CommandLine>
+                    <Order>77</Order>
+                    <Description>Remove Windows store from taskbar</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer\ /v NoPinningStoreToTaskbar /t REG_DWORD /d 0 /f</CommandLine>
+                    <Order>78</Order>
+                    <Description>Remove Windows store from taskbar</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <CommandLine>cmd.exe /c powercfg -Change -monitor-timeout-ac 9999</CommandLine>
+                    <Description>powercfg</Description>
+                    <Order>79</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <CommandLine>cmd.exe /c powercfg -Change -monitor-timeout-dc 9999</CommandLine>
+                    <Description>powercfg</Description>
+                    <Order>80</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                </SynchronousCommand>
                 <!-- WITHOUT WINDOWS UPDATES -->
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -File a:\openssh.ps1 -AutoStart</CommandLine>
@@ -299,6 +329,14 @@
             <!--TimeZone>Pacific Standard Time</TimeZone> -->
             <TimeZone>Romance Standard Time</TimeZone>
             <RegisteredOwner/>
+            <ShowPowerButtonOnStartScreen>true</ShowPowerButtonOnStartScreen>
+            <DesktopOptimization>
+                 <GoToDesktopOnSignIn>false</GoToDesktopOnSignIn>
+                 <ShowWindowsStoreAppsOnTaskbar>false</ShowWindowsStoreAppsOnTaskbar>
+            </DesktopOptimization>
+            <TaskbarLinks>
+               <Link0>%AppData%\Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk</Link0>
+            </TaskbarLinks>
         </component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SkipAutoActivation>true</SkipAutoActivation>
