@@ -1,0 +1,50 @@
+{
+  "variables": {
+    "autounattend":      "./answer_files/10-EE-EVAL/Autounattend.xml",
+    "cpus":              "",
+    "disk_size":         "",
+    "headless":          "true",
+    "iso_checksum":      "",
+    "iso_checksum_type": "",
+    "iso_url":           "",
+    "memory_size":       "",
+    "name":              "",
+    "output_directory":  "",
+    "winrm_password":    "packer",
+    "winrm_username":    "packer"
+  },
+  "builders": [
+    {
+      "boot_wait":         "2m",
+      "communicator":      "winrm",
+      "disk_size":         "{{user `disk_size`}}",
+      "floppy_files": [
+        "{{user `autounattend`}}",
+        "./scripts/configure-winrm.ps1",
+        "./scripts/Enable-RemoteDesktop.ps1",
+        "./scripts/vm-guest-tools.bat"
+      ],
+      "guest_os_type":     "Windows10_64",
+      "iso_url":           "{{user `iso_url`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum":      "{{user `iso_checksum`}}",
+      "headless":          "{{user `headless`}}",
+      "output_directory":  "{{user `output_directory`}}", 
+      "shutdown_command":  "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "type":              "virtualbox-iso",
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--accelerate2dvideo", "on"],
+        ["modifyvm", "{{.Name}}", "--clipboard",         "bidirectional"],
+        ["modifyvm", "{{.Name}}", "--cpus",              "{{user `cpus`}}"],
+        ["modifyvm", "{{.Name}}", "--draganddrop",       "hosttoguest"],
+        ["modifyvm", "{{.Name}}", "--memory",            "{{user `memory_size`}}"],
+        ["modifyvm", "{{.Name}}", "--vram",              "128"]
+      ],
+      "vm_name":           "{{user `name`}}",
+      "winrm_insecure":    true,
+      "winrm_password":    "{{user `winrm_password`}}", 
+      "winrm_timeout":     "1h",
+      "winrm_username":    "{{user `winrm_username`}}"
+    }
+  ]
+}
