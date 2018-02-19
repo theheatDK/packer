@@ -29,7 +29,7 @@
       "iso_checksum_type":    "{{user `iso_checksum_type`}}",
       "iso_checksum":         "{{user `iso_checksum`}}",
       "headless":             "{{user `headless`}}",
-      "output_directory":     "{{user `output_directory`}}", 
+      "output_directory":     "{{user `output_directory`}}",
       "shutdown_command":     "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
       "type":                 "virtualbox-iso",
       "vboxmanage": [
@@ -42,7 +42,7 @@
       ],
       "vm_name":              "{{user `name`}}",
       "winrm_insecure":       true,
-      "winrm_password":       "{{user `winrm_password`}}", 
+      "winrm_password":       "{{user `winrm_password`}}",
       "winrm_timeout":        "1h",
       "winrm_username":       "{{user `winrm_username`}}"
     }
@@ -51,6 +51,11 @@
     {
       "type":   "powershell",
       "script": "scripts/install-vbox-guest-addition.ps1"
-    }    
+    },
+    {
+      "type":   "powershell",
+      "script": "scripts/boxstarter.ps1"
+    }
   ]
 }
+

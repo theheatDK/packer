@@ -127,63 +127,21 @@
             </AutoLogon>
             <FirstLogonCommands>
                 <SynchronousCommand wcm:action="add">
-                    <CommandLine>powershell Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force</CommandLine>
-                    <Description>Set Execution Policy 64 Bit</Description>
+                    <CommandLine>powershell Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope LocalMachine -Force</CommandLine>
+                    <Description>Set Execution Policy</Description>
                     <Order>10</Order>
                     <RequiresUserInput>false</RequiresUserInput>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <CommandLine>cmd.exe /c reg add "HKLM\System\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
+                    <CommandLine>powershell New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff" -Force</CommandLine>
                     <Description>Disable network prompt "allow PC to be discoverable on this network"</Description>
-                    <Order>30</Order>
-                    <RequiresUserInput>false</RequiresUserInput>
-                </SynchronousCommand>
+                    <Order>20</Order>
+                    <RequiresUserInput>true</RequiresUserInput>
+                </SynchronousCommand>                
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>powershell -File a:\configure-winrm.ps1</CommandLine>
-                    <Description>Enable RDP</Description>
-                    <Order>40</Order>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>cmd.exe /c wmic useraccount where "name='packer'" set PasswordExpires=FALSE</CommandLine>
-                    <Order>60</Order>
-                    <Description>Disable password expiration for packer user</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>cmd.exe /c powercfg -Change -monitor-timeout-ac 9999</CommandLine>
-                    <Description>Monitor timeout AC</Description>
-                    <Order>70</Order>
-                    <RequiresUserInput>false</RequiresUserInput>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>cmd.exe /c powercfg -Change -monitor-timeout-dc 9999</CommandLine>
-                    <Description>Monitor timeout DC</Description>
-                    <Order>80</Order>
-                    <RequiresUserInput>false</RequiresUserInput>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\ /v HideFileExt /t REG_DWORD /d 0 /f</CommandLine>
-                    <Order>90</Order>
-                    <Description>Show file extensions in Explorer</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\Console /v QuickEdit /t REG_DWORD /d 1 /f</CommandLine>
-                    <Order>100</Order>
-                    <Description>Enable QuickEdit mode</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKLM\SYSTEM\CurrentControlSet\Control\Power\ /v HibernateFileSizePercent /t REG_DWORD /d 0 /f</CommandLine>
-                    <Order>110</Order>
-                    <Description>Zero Hibernation File</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKLM\SYSTEM\CurrentControlSet\Control\Power\ /v HibernateEnabled /t REG_DWORD /d 0 /f</CommandLine>
-                    <Order>120</Order>
-                    <Description>Disable Hibernation Mode</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer\ /v NoPinningStoreToTaskbar /t REG_DWORD /d 0 /f</CommandLine>
-                    <Order>130</Order>
-                    <Description>Remove Windows store from taskbar</Description>
+                    <Description>Configure winrm</Description>
+                    <Order>30</Order>
                 </SynchronousCommand>
             </FirstLogonCommands>
             <ShowWindowsLive>false</ShowWindowsLive>
@@ -199,6 +157,10 @@
             <!--TimeZone>Pacific Standard Time</TimeZone> -->
             <TimeZone>Romance Standard Time</TimeZone>
         </component>
+        <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-IE-ESC" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <IEHardenAdmin>false</IEHardenAdmin>
+            <IEHardenUser>false</IEHardenUser>
+        </component>        
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SkipAutoActivation>true</SkipAutoActivation>
         </component>
