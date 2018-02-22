@@ -1,0 +1,411 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    ip_end: 24
+    ip_start: 16
+    jboss_eap_user: jboss
+    network: 10.0.2
+    routing_prefix: 24
+
+    basic_packages:
+#      - git
+#      - subversion
+      - yum-cron
+      - yum-plugin-fastestmirror
+      - yum-utils
+      
+    oel_packages:
+      - kmod-vboxguest-uek4
+      - vboxguest-tools      
+
+  tasks:
+    - name: OS info
+      debug:
+        msg:  |
+              ansible_os_family            = {{ ansible_os_family }}
+              ansible_distribution         = {{ ansible_distribution }}
+              ansible_distribution_version = {{ ansible_distribution_version }}
+              ansible_distribution_release = {{ ansible_distribution_release }}
+      when: ansible_os_family is defined
+
+    ###############################################################################
+    # Enable OEL repos
+    ###############################################################################
+    - name: Enable OEL repos
+      block:
+        - name: Enable OEL 7 optional repo
+          ini_file:
+            dest: /etc/yum.repos.d/public-yum-ol7.repo
+            section: ol7_optional_latest
+            option: enabled
+            value: 1
+
+        - name: Enable OEL 7 addon repo
+          ini_file:
+            dest: /etc/yum.repos.d/public-yum-ol7.repo
+            section: ol7_addons
+            option: enabled
+            value: 1
+      when: ansible_distribution == 'OracleLinux'
+      tags:
+        - oel-repos
+
+    ###############################################################################
+    # Install OEL packages
+    ###############################################################################
+    - name: Install OEL packages
+      block:
+        - name: Install OEL packages
+          yum:
+            name: "{{ oel_packages }}"
+            state: present
+      when: ansible_distribution == 'OracleLinux'
+      tags:
+        - oel-packages
+
+    ###############################################################################
+    # Harden
+    ###############################################################################
+    - name: Set default umask to 027
+      replace:
+        dest=/etc/profile
+        regexp="umask 02."
+        replace="umask 027"
+        backup=yes
+      tags:
+        - harden
+
+    ###############################################################################
+    # Harden root
+    ###############################################################################
+    - name: Delete password from root
+      command: "passwd -d root"
+      tags:
+        - harden-root
+
+    ###############################################################################
+    # Harden ssh
+    ###############################################################################
+    - name: Harden ssh
+      block:
+        - name: sshd - Disallow password authentication
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PasswordAuthentication"
+            line: "PasswordAuthentication no"
+            state: present
+          notify: Restart sshd
+
+        - name: sshd - Disallow root SSH login
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PermitRootLogin"
+            line: "PermitRootLogin no"
+            state: present
+          notify: Restart sshd
+      tags:
+        - harden-ssh
+
+    ###############################################################################
+    # Install docker
+    ###############################################################################
+    - name: Install docker
+      block:
+        - name: Add Docker GPG key.
+          rpm_key:
+            key: https://download.docker.com/linux/centos/gpg
+            state: present
+
+        - name: Add Docker repository
+          get_url:
+            url: "https://download.docker.com/linux/centos/docker-ce.repo"
+            dest: '/etc/yum.repos.d/docker-ce.repo'
+            owner: root
+            group: root
+            mode: 0644
+
+        - name: Install docker
+          yum:
+            name: docker
+            state: present
+      tags:
+        - docker
+
+    ###############################################################################
+    # Install httpd
+    ###############################################################################
+    - name: Install httpd
+      block:
+        - name: Install httpd and mod_ssl
+          yum:
+            name: "httpd,mod_ssl"
+            state: present
+
+        - name: httpd should start a boot
+          systemd:
+            name: httpd
+            enabled: yes
+            state: restarted
+      tags:
+        - httpd
+
+    ###############################################################################
+    # Install powershell
+    ###############################################################################
+    - name: Install Powershell
+      block:
+        - name: Add Microsoft RedHat repository
+          get_url:
+            url: "https://packages.microsoft.com/config/rhel/7/prod.repo"
+            dest: '/etc/yum.repos.d/microsoft.repo'
+            owner: root
+            group: root
+            mode: 0644
+
+        - name: Install Powershell
+          yum:
+            name: powershell
+            state: present
+      tags:
+        - powershell
+
+    ###############################################################################
+    # Install JBoss EAP
+    ###############################################################################
+    - name: Install JBoss EAP
+      block:
+        - name: Install maven
+          yum:
+            name: maven
+            state: present
+
+        - name: Create jboss user
+          user:
+            name: "{{ jboss_eap_user }}"
+
+        - name: Set up sudo the {{ jboss_eap_user }} user
+          blockinfile:
+            dest: /etc/sudoers
+            insertafter: EOF
+            marker: "## {mark} ansible jboss user block"
+            block: |
+              Cmnd_Alias SYSTEMD = /usr/bin/journalctl, /usr/bin/systemctl start jbosseap6, /usr/bin/systemctl restart jbosseap6, /usr/bin/systemctl stop jbosseap6
+              jboss ALL = NOPASSWD:SYSTEMD
+    
+        - name: Insert call of jboss-eap.conf in .bashrc
+          blockinfile:
+            dest: /home/{{ jboss_eap_user }}/.bashrc
+            insertafter: EOF
+            marker: "## {mark} ansible jboss eap block"
+            block: |
+              . /etc/default/jboss-eap.conf
+
+        - name: Create product directory
+          file:
+            path: /data/app/redhat/product
+            state: directory
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+            mode: ug=rwx,o=
+
+        - name: Create logs directory
+          file:
+            path: /data/logs/jboss-eap
+            state: directory
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+            mode: ug=rwx,o=
+
+        - name: Unpack Java JDK
+          unarchive:
+            src: /usr/tmp/jdk-8u144-linux-x64.tar.gz
+            dest: /data/app/redhat/product
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Create soft links to Java directory
+          file:
+            src: /data/app/redhat/product/jdk1.8.0_144
+            path: /data/app/redhat/product/java_current
+            state: link
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Unpack JBoss EAP
+          unarchive:
+            src: /usr/tmp/jboss-eap-6.4.0.zip
+            dest: /data/app/redhat/product
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Create soft links to EAP directory
+          file:
+            src: /data/app/redhat/product/jboss-eap-6.4
+            path: /data/app/redhat/product/jboss_current
+            state: link
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Apply EAP patch 09
+          command: "/data/app/redhat/product/jboss_current/bin/jboss-cli.sh 'patch apply /usr/tmp/jboss-eap-6.4.9-patch.zip'"
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Apply EAP patch 17
+          command: "/data/app/redhat/product/jboss_current/bin/jboss-cli.sh 'patch apply /usr/tmp/jboss-eap-6.4.17-patch.zip'"
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Install fuse
+          shell: |
+            cd /data/app/redhat/product/jboss_current
+            /data/app/redhat/product/java_current/bin/java -jar /usr/tmp/fuse-eap-installer-6.3.0.redhat-262.jar
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Add JBoss EAP users
+          command: "/data/app/redhat/product/jboss_current/bin/add-user.sh -u 'eapmgr' -p 'manager1.' -g 'mgmtgroup'"
+          become_user: "{{ jboss_eap_user }}"
+
+        - name: Change server.log location
+          replace:
+            dest: /data/app/redhat/product/jboss_current/standalone/configuration/logging.properties
+            regexp: "handler.FILE.fileName=.*"
+            replace: 'handler.FILE.fileName=data/logs/jboss-eap/server.log'
+
+        - name: Copy jboss-as-standalone.sh
+          copy:
+            src: /usr/tmp/jboss-as-standalone.sh
+            dest: /data/app/redhat/product/jboss_current/bin/init.d/
+            backup: yes
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: jbosseap6 should start a boot
+          systemd:
+            name: jbosseap6
+            enabled: yes
+            state: restarted
+
+        - name: Deploy hello.war
+          copy:
+            src: /usr/tmp/hello.war
+            dest: /data/app/redhat/product/jboss_current/standalone/deployments/
+            owner: "{{ jboss_eap_user }}"
+            group: "{{ jboss_eap_user }}"
+
+        - name: Remove uploaded software
+          command: "rm -rf /usr/tmp/*"
+
+        - name: Block access to default Java
+          shell: |
+            chmod a-rx /etc/alternatives/java
+            chmod a-rx /usr/bin/java
+      tags:
+        - jboss-eap
+
+    ###############################################################################
+    # Create users with public key
+    ###############################################################################
+    - name: Create users with public key
+      block:
+        - name: Create users
+          user:
+            name: "{{ item }}"
+          with_items: "{{ users }}"
+
+        - name: Authorize users with ssh key
+          authorized_key:
+            user: "{{ item }}"
+            key: "{{ lookup('file', '/usr/tmp/ssh_pub_keys/{{ item }}_id_rsa.pub') }}"
+          with_items: "{{ users }}"
+
+        - name: Delete ssh key directory
+          file:
+            state: absent
+            path: "/usr/tmp/ssh_pub_keys/"
+
+        - name: Create users string
+          set_fact:
+            user_string: '{{users|join(",")}}'
+
+        - name: Set up sudo for users
+          lineinfile:
+            dest: /etc/sudoers
+            state: present
+            regexp: '{{item.re}}'
+            line: '{{item.line}}'
+            validate: '/usr/sbin/visudo -cf %s'
+            backup: yes
+          with_items:
+            - {re: "^ *User_Alias +SUDOROOT *=", line: "User_Alias SUDOROOT={{user_string}}"}
+            - {re: "^ *SUDOROOT ", line: "SUDOROOT ALL=(ALL) NOPASSWD:ALL"}
+      tags:
+        - users-with-pk
+
+    ###############################################################################
+    # Add extra IPs
+    ###############################################################################
+    - name: Add extra IPs
+      command: nmcli con mod enp0s3 +ipv4.addresses {{ network }}.{{ item }}/{{ routing_prefix }}
+      with_sequence: start={{ ip_start }} end={{ ip_end }} stride=1
+      tags:
+        - add-ips
+
+    ###############################################################################
+    # yum update
+    ###############################################################################
+    - name: Upgrade all packages
+      block:
+        - name: Upgrade all packages
+          yum: name=* state=latest
+
+        - name: Remove old kernels
+          command: package-cleanup --oldkernels --count=2
+      tags:
+        - yum-update
+
+    ###############################################################################
+    # Basic tasks
+    ###############################################################################
+    - name: Basic tasks
+      block:
+        - name: Install the listed basic packages
+          yum:
+            name: "{{ basic_packages }}"
+            state: present
+
+        - name: yum-cron start a boot
+          systemd:
+            name: yum-cron
+            enabled: yes
+            state: restarted
+
+        - name: sshd - Set UseDNS no
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^UseDNS"
+            line: "UseDNS no"
+            insertafter: EOF
+            state: present
+          notify: Restart sshd
+
+        - name: Prevent blocking because of missing entropy
+          replace:
+            dest: "/usr/lib/systemd/system/rngd.service"
+            regexp: "ExecStart=.*"
+            replace: "ExecStart=/sbin/rngd -f -r /dev/urandom"
+
+        - name: Force systemd to reread configs
+          command: systemctl daemon-reload
+
+  handlers:
+    - name: Restart sshd
+      systemd:
+        name: sshd
+        state: restarted
+
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted

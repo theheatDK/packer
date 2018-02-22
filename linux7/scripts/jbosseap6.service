@@ -1,0 +1,13 @@
+[Unit]
+Description=JBoss EAP Systemctl script
+After=NetworkManager.service
+
+[Service]
+Type=forking
+ExecStart=/data/app/redhat/product/jboss_current/bin/init.d/jboss-as-standalone.sh start
+ExecStop=/data/app/redhat/product/jboss_current/bin/init.d/jboss-as-standalone.sh stop
+ExecReload=/data/app/redhat/product/jboss_current/bin/init.d/jboss-as-standalone.sh restart
+PIDFile=/var/run/jboss-as/jboss-as-standalone.pid
+
+[Install]
+WantedBy=multi-user.target

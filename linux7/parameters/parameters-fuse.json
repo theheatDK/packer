@@ -1,0 +1,17 @@
+{
+  "guest_os_type":     "RedHat_64",
+  "iso_checksum":      "ec7500d4b006702af6af023b1f8f1b890b6c7ee54400bb98cef968b883cd6546",
+  "iso_checksum_type": "sha256",
+  "iso_url":           "D:/software/centos/CentOS-7-x86_64-DVD-1708.iso",
+  "java_dir":          "jdk1.8.0_144",
+  "java_jdk":          "D:/software/java/jdk-8u144-linux-x64.tar.gz",
+  "jboss_eap":         "D:/software/eap/jboss-eap-6.4.0.zip",
+  "jboss_eap_patch09": "D:/software/eap/jboss-eap-6.4.9-patch.zip",
+  "jboss_eap_patch17": "D:/software/eap/jboss-eap-6.4.17-patch.zip",
+  "jboss_fuse":        "D:/software/fuse/fuse-eap-installer-6.3.0.redhat-262.jar",
+  "nic1_type":         "nat",
+  "os_disk_size":      "30720",
+  "output_dir":        "e:/packer-out/centos7-fuse",
+  "skip_tags":         "add-ips,docker,harden-root,harden-ssh,httpd,powershell",
+  "vm_name":           "centos7-fuse"
+}

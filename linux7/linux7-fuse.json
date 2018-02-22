@@ -1,0 +1,141 @@
+{
+  "variables": {
+    "guest_os_type":     "",
+    "hosts":             "",
+    "iso_checksum":      "",
+    "iso_checksum_type": "",
+    "iso_url":           "",
+    "java_jdk":          "",
+    "jboss_eap":         "",
+    "jboss_eap_patch09": "",
+    "jboss_eap_patch17": "",
+    "jboss_fuse":        "",
+    "network_device":    "",
+    "os_disk_size":      "",
+    "output_dir":        "",
+    "rhsm_password":     "",
+    "rhsm_username":     "",
+    "skip_tags":         "",
+    "ssh_pub_keys_dir":  "",
+    "users":             "",
+    "vm_name":           ""
+  },
+  "provisioners": [
+    {
+      "type":        "file",
+      "source":      "{{user `hosts`}}",
+      "destination": "/etc/hosts"
+    },
+    {
+      "type":        "file",
+      "source":      "{{user `ssh_pub_keys_dir`}}",
+      "destination": "/usr/tmp/ssh_pub_keys"
+    },
+    {
+      "type":        "file",
+      "source":      "scripts/ps1.sh",
+      "destination": "/etc/profile.d/"
+    },
+    {
+      "type":        "file",
+      "source":      "scripts/jboss-as-standalone.sh",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "software/hello.war",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "{{user `java_jdk`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "{{user `jboss_eap`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "{{user `jboss_eap_patch09`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "{{user `jboss_eap_patch17`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "{{user `jboss_fuse`}}",
+      "destination": "/usr/tmp/"
+    },
+    {
+      "type":        "file",
+      "source":      "scripts/jboss-eap.conf",
+      "destination": "/etc/default/"
+    },
+    {
+      "type":        "file",
+      "source":      "scripts/jbosseap6.service",
+      "destination": "/etc/systemd/system/"
+    },
+    {
+      "type":            "shell",
+      "environment_vars": [
+        "RHSM_USERNAME={{user `rhsm_username`}}",
+        "RHSM_PASSWORD={{user `rhsm_password`}}"
+      ],
+      "execute_command": "echo 'packer' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script":          "scripts/install-ansible.sh"
+    },
+    {
+      "type":            "ansible-local",
+      "playbook_file":   "ansible/main.yml",
+      "extra_arguments": [
+        "--extra-vars", "'{ {{user `users`}}, }'", "--skip-tags", "{{ user `skip_tags` }}"
+      ],
+      "command":         "ANSIBLE_FORCE_COLOR=0 PYTHONUNBUFFERED=1 ansible-playbook"
+    }
+  ],
+  "builders": [
+    {
+      "boot_command": [
+        "<up><tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/rhel-7-ks.cfg<enter><wait>"
+      ],
+      "boot_wait":            "12s",
+      "disk_size":            "{{user `os_disk_size`}}",
+      "guest_additions_mode": "disable",
+      "guest_os_type":        "{{user `guest_os_type`}}",
+      "headless":             false,
+      "http_directory":       "http",
+      "http_port_min" :       10010,
+      "http_port_max" :       10020,
+      "iso_checksum":         "{{user `iso_checksum`}}",
+      "iso_checksum_type":    "{{user `iso_checksum_type`}}",
+      "iso_url":              "{{user `iso_url`}}",
+      "name":                 "cc360",
+      "output_directory":     "{{user `output_dir`}}",
+      "shutdown_command":     "shutdown -P now",
+      "ssh_host_port_min":    2222,
+      "ssh_host_port_max":    2232,
+      "ssh_password":         "root",
+      "ssh_port":             22,
+      "ssh_timeout":          "30m",
+      "ssh_username":         "root",
+      "type":                 "virtualbox-iso",
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--cpus", "2"],
+        ["modifyvm", "{{.Name}}", "--memory", "4096"],
+        ["modifyvm", "{{.Name}}", "--nic1", "{{user `nic1_type`}}"],
+        ["modifyvm", "{{.Name}}", "--natpf1", "port22,tcp,127.0.0.1,22,10.0.2.15,22"],
+        ["modifyvm", "{{.Name}}", "--natpf1", "port80,tcp,127.0.0.1,80,10.0.2.15,80"],
+        ["modifyvm", "{{.Name}}", "--natpf1", "port443,tcp,127.0.0.1,443,10.0.2.15,443"],
+        ["modifyvm", "{{.Name}}", "--natpf1", "port8080,tcp,127.0.0.1,8080,10.0.2.15,8080"],
+        ["modifyvm", "{{.Name}}", "--natpf1", "port9990,tcp,127.0.0.1,9990,10.0.2.15,9990"]
+      ],
+      "vm_name":              "{{user `vm_name`}}"
+    }
+  ]
+}

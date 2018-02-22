@@ -11,8 +11,8 @@
     routing_prefix: 24
 
     basic_packages:
-      - git
-      - subversion
+#      - git
+#      - subversion
       - yum-cron
       - yum-plugin-fastestmirror
       - yum-utils
@@ -72,7 +72,7 @@
     - name: Set default umask to 027
       replace:
         dest=/etc/profile
-        regexp="umask 0.."
+        regexp="umask 02."
         replace="umask 027"
         backup=yes
       tags:
