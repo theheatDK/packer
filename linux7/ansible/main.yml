@@ -16,10 +16,10 @@
       - yum-cron
       - yum-plugin-fastestmirror
       - yum-utils
-      
+
     oel_packages:
       - kmod-vboxguest-uek4
-      - vboxguest-tools      
+      - vboxguest-tools
 
   tasks:
     - name: OS info
@@ -194,7 +194,7 @@
             block: |
               Cmnd_Alias SYSTEMD = /usr/bin/journalctl, /usr/bin/systemctl start jbosseap6, /usr/bin/systemctl restart jbosseap6, /usr/bin/systemctl stop jbosseap6
               jboss ALL = NOPASSWD:SYSTEMD
-    
+
         - name: Insert call of jboss-eap.conf in .bashrc
           blockinfile:
             dest: /home/{{ jboss_eap_user }}/.bashrc
@@ -395,6 +395,11 @@
             dest: "/usr/lib/systemd/system/rngd.service"
             regexp: "ExecStart=.*"
             replace: "ExecStart=/sbin/rngd -f -r /dev/urandom"
+
+        - name: Set permissions for files in /usr/local/bin
+          file:
+            path: /usr/local/bin
+            mode: "a+rx"
 
         - name: Force systemd to reread configs
           command: systemctl daemon-reload

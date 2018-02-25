@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Menu for changing to CC360 users
+#
+# Version 1.0 - 20170403 lorenzenp - Created
+
+title="======================= users ======================="
+iamback="==================== back to $USER ===================="
+prompt="Pick a user:"
+options=(CC360-USERS root)
+
+echo "$title"
+PS3="$prompt "
+select opt in "${options[@]}" "Quit"; do
+    if (("$REPLY" > 0 && "$REPLY"<= ${#options[@]})); then
+        echo "You picked $opt which is option $REPLY"
+    elif (("$REPLY" == ${#options[@]}+1)); then
+        echo "Goodbye!"
+        break
+    else
+        echo "Invalid option. Try another one."
+        continue
+    fi
+    echo "Shift user to $opt"
+    sudo -Hiu "$opt"
+    echo "$iamback"
+    pwd
+    break
+done
