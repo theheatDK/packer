@@ -75,12 +75,21 @@
     ###############################################################################
     # Harden
     ###############################################################################
-    - name: Set default umask to 027
-      replace:
-        dest=/etc/profile
-        regexp="umask 02."
-        replace="umask 027"
-        backup=yes
+    - name: Set umask to 077
+      block:
+        - name: bashrc - umask
+          replace:
+            dest=/etc/bashrc
+            regexp="umask 0.."
+            replace="umask 077"
+            backup=yes
+
+        - name: csh.cshrc - umask
+          replace:
+            dest=/etc/bashrc
+            regexp="umask 0.."
+            replace="umask 077"
+            backup=yes
       tags:
         - harden
 

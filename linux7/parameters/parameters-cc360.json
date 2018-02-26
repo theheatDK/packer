@@ -5,7 +5,7 @@
   "iso_url":           "D:/software/centos/CentOS-7-x86_64-DVD-1708.iso",
   "nic1_type":         "nat",
   "os_disk_size":      "30720",
-  "output_dir":        "e:/packer-out/centos7-cc360",
+  "output_dir":        "e:/packer-out/centos7-cc360-42",
   "skip_tags":         "add-ips,docker,httpd,jboss-eap,powershell",
-  "vm_name":           "centos7-cc360"
+  "vm_name":           "centos7-cc360-42"
 }

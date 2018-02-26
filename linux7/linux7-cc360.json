@@ -52,7 +52,6 @@
       ],
       "boot_wait":            "12s",
       "disk_size":            "{{user `os_disk_size`}}",
-      "guest_additions_mode": "disable",
       "guest_os_type":        "{{user `guest_os_type`}}",
       "headless":             false,
       "http_directory":       "http",
