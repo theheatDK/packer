@@ -6,6 +6,6 @@
   "nic1_type":         "nat",
   "os_disk_size":      "30720",
   "output_dir":        "e:/packer-out/centos7-cc360",
-  "skip_tags":         "add-ips,docker,harden-root,harden-ssh,httpd,jboss-eap,powershell",
+  "skip_tags":         "add-ips,docker,httpd,jboss-eap,powershell",
   "vm_name":           "centos7-cc360"
 }

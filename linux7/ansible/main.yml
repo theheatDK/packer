@@ -21,6 +21,12 @@
       - kmod-vboxguest-uek4
       - vboxguest-tools
 
+    system_accounts: |
+                jboss
+                mysql
+                pentaho
+                root
+
   tasks:
     - name: OS info
       debug:
@@ -91,7 +97,15 @@
     ###############################################################################
     - name: Harden ssh
       block:
-        - name: sshd - Disallow password authentication
+        - name: sshd - HostbasedAuthentication
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^HostbasedAuthentication"
+            line: "PasswordAuthentication no"
+            state: present
+          notify: Restart sshd
+
+        - name: sshd - PasswordAuthentication
           lineinfile:
             dest: /etc/ssh/sshd_config
             regexp: "^PasswordAuthentication"
@@ -99,13 +113,49 @@
             state: present
           notify: Restart sshd
 
-        - name: sshd - Disallow root SSH login
+        - name: sshd - PermitEmptyPasswords
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PermitEmptyPasswords"
+            line: "PermitEmptyPasswords no"
+            state: present
+          notify: Restart sshd
+
+        - name: sshd - PermitRootLogin
           lineinfile:
             dest: /etc/ssh/sshd_config
             regexp: "^PermitRootLogin"
             line: "PermitRootLogin no"
             state: present
           notify: Restart sshd
+
+        - name: /etc/hosts.allow
+          blockinfile:
+            dest: /etc/hosts.allow
+            insertafter: EOF
+            marker: "## {mark} ansible block"
+            block: |
+              sshd:ALL
+
+        - name: /etc/hosts.deny
+          blockinfile:
+            dest: /etc/hosts.deny
+            insertafter: EOF
+            marker: "## {mark} ansible block"
+            block: |
+              ALL:ALL
+
+        - name: /etc/ssh/sshd.deny
+          blockinfile:
+            dest: /etc/ssh/sshd.deny
+            create: yes
+            group: root
+            owner: root
+            mode: "u=rw,go="
+            insertafter: EOF
+            marker: "## {mark} ansible block"
+            block: |
+              {{ system_accounts }}
       tags:
         - harden-ssh
 
