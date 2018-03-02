@@ -38,6 +38,65 @@
       when: ansible_os_family is defined
 
     ###############################################################################
+    # Install VirtualBox guest additions
+    ###############################################################################
+    - name: Install VirtualBox guest additions
+      block:
+        - name: Get the current kernel release.
+          command: uname -r
+          changed_when: false
+          register: kernel_release
+
+        - name: Ensure necessary packages are installed.
+          yum: "name={{ item }} state=present"
+          with_items:
+            - wget
+            - perl
+            - cpp
+            - gcc
+            - make
+            - bzip2
+            - kernel-headers
+            - kernel-devel
+            - "kernel-devel-{{ kernel_release.stdout }}"
+            - libselinux-python
+            - cifs-utils
+
+        # Fix slow DNS.
+        - name: Fix slow DNS (adapted from Bento).
+          lineinfile:
+            dest: /etc/sysconfig/network
+            regexp: '^RES_OPTIONS'
+            line: 'RES_OPTIONS="single-request-reopen"'
+            state: present
+
+        - name: Mount VirtualBox guest additions ISO.
+          mount:
+            name: /tmp/vbox
+            src: "/root/VBoxGuestAdditions.iso"
+            opts: loop
+            state: mounted
+            fstype: iso9660
+
+        - name: Run VirtualBox guest additions installation.
+          shell: sh /tmp/vbox/VBoxLinuxAdditions.run
+          failed_when: false
+
+        - name: Unmount VirtualBox guest additions ISO.
+          mount:
+            name: /tmp/vbox
+            src: "/root/VBoxGuestAdditions.iso"
+            state: absent
+            fstype: iso9660
+
+        - name: Delete VirtualBox guest additions ISO.
+          file:
+            path: "/root/VBoxGuestAdditions.iso"
+            state: absent
+      tags:
+        - vbox-guest-additions
+
+    ###############################################################################
     # Enable OEL repos
     ###############################################################################
     - name: Enable OEL repos
@@ -459,6 +518,22 @@
           file:
             path: /usr/local/bin
             mode: "a+rx"
+
+        - name: Copy dummy host keys (ssh_host_ed25519_key)
+          copy:
+            src: /tmp/ssh_host_ed25519_key
+            dest: /etc/ssh
+            owner: root
+            group: ssh_keys
+            mode: "u=rw,g=r,o="
+
+        - name: Copy dummy host keys (ssh_host_ed25519_key.pub)
+          copy:
+            src: /tmp/ssh_host_ed25519_key.pub
+            dest: /etc/ssh
+            owner: root
+            group: root
+            mode: "u=rw,g=r,o="
 
         - name: Force systemd to reread configs
           command: systemctl daemon-reload

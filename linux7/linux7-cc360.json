@@ -27,6 +27,12 @@
       "source":      "scripts/usr-local-bin/",
       "destination": "/usr/local/bin"
     },
+
+    {
+      "type":        "file",
+      "source":      "host-keys/",
+      "destination": "/tmp"
+    },
     {
       "type":            "shell",
       "environment_vars": [
