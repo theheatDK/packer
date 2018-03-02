@@ -145,7 +145,14 @@
 
         - name: csh.cshrc - umask
           replace:
-            dest=/etc/bashrc
+            dest=/etc/csh.cshrc
+            regexp="umask 0.."
+            replace="umask 077"
+            backup=yes
+
+        - name: profile - umask
+          replace:
+            dest=/etc/profile
             regexp="umask 0.."
             replace="umask 077"
             backup=yes
