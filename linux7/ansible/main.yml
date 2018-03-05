@@ -523,7 +523,7 @@
 
         - name: Set permissions for files in /usr/local/bin
           file:
-            path: /usr/local/bin
+            path: /usr/local/bin/*
             mode: "a+rx"
 
         - name: Copy dummy host keys (ssh_host_ed25519_key)
