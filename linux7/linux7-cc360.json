@@ -59,6 +59,7 @@
       "boot_wait":            "12s",
       "disk_size":            "{{user `os_disk_size`}}",
       "guest_os_type":        "{{user `guest_os_type`}}",
+      "hard_drive_interface:  "sata",
       "headless":             false,
       "http_directory":       "http",
       "http_port_min" :       10010,
@@ -85,7 +86,8 @@
         ["modifyvm", "{{.Name}}", "--natpf1", "port3306,tcp,127.0.0.1,3306,10.0.2.15,3306"],
         ["modifyvm", "{{.Name}}", "--natpf1", "port8080,tcp,127.0.0.1,8080,10.0.2.15,8080"],
         ["modifyvm", "{{.Name}}", "--natpf1", "port8090,tcp,127.0.0.1,8090,10.0.2.15,8090"],
-        ["modifyvm", "{{.Name}}", "--natpf1", "port9990,tcp,127.0.0.1,9990,10.0.2.15,9990"]
+        ["modifyvm", "{{.Name}}", "--natpf1", "port9990,tcp,127.0.0.1,9990,10.0.2.15,9990"],
+        ["modifyvm", "{{.Name}}", "--vram",   "128"]
       ],
       "vm_name":              "{{user `vm_name`}}"
     }

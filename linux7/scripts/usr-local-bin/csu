@@ -7,7 +7,7 @@
 title="======================= users ======================="
 iamback="==================== back to $USER ===================="
 prompt="Pick a user:"
-options=(CC360-USERS root)
+options=(jboss mysql tomcat)
 
 echo "$title"
 PS3="$prompt "
