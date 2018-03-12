@@ -22,7 +22,7 @@ select opt in "${options[@]}" "Quit"; do
         continue
     fi
     echo "Shift user to $opt"
-    sudo -Hiu "$opt"
+    sudo -Hi "PATH=$PATH:$HOME/.local/bin:$HOME/bin" -u "$opt"
     echo "$iamback"
     pwd
     break
