@@ -469,6 +469,28 @@
         - users-with-pk
 
     ###############################################################################
+    # Standard bash configurations
+    ###############################################################################
+    - name: Standard bash configurations
+      block:
+        - name: Copy .inputrc
+          get_url:
+            url: https://raw.githubusercontent.com/theheatDK/dotfiles/master/.inputrc
+            dest: "/home/{{ item }}"
+            owner: {{ item }}
+            group: {{ item }}
+            mode: "u=rw,go="
+          with_items: {{ users }}
+
+        - name: Copy .inputrc to root
+          get_url:
+            url: https://raw.githubusercontent.com/theheatDK/dotfiles/master/.inputrc
+            dest: "/root"
+            mode: "u=rw,go="
+      tags:
+        - standard-bash-conf
+
+    ###############################################################################
     # Add extra IPs
     ###############################################################################
     - name: Add extra IPs
