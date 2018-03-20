@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# Copy CC360 deployment files
+#
+#               YYYY-MM-YY
+# Version 1.0 - 2018-03-20 lorenzenp - Created
+
+GROUP_LIST=$(groups)
+
+if [[ "$GROUP_LIST" =~ cc360 ]]; then
+    title="======================= users ======================="
+    iamback="==================== back to $USER ===================="
+    prompt="Pick a user:"
+    options=(jboss mysql tomcat)
+
+    echo "$title"
+    PS3="$prompt "
+    select opt in "${options[@]}" "Quit"; do
+        if (("$REPLY" > 0 && "$REPLY"<= ${#options[@]})); then
+            echo "$opt"
+            break
+        elif (("$REPLY" == ${#options[@]}+1)); then
+            break
+        else
+            echo "Invalid option. Try another one."
+            continue
+        fi
+    done
+
+    
+else
+    echo
+    echo "User not in the cc360 group"
+    echo
+    exit 1
+fi
