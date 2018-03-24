@@ -477,10 +477,10 @@
           get_url:
             url: https://raw.githubusercontent.com/theheatDK/dotfiles/master/.inputrc
             dest: "/home/{{ item }}"
-            owner: {{ item }}
-            group: {{ item }}
+            owner: "{{ item }}"
+            group: "{{ item }}"
             mode: "u=rw,go="
-          with_items: {{ users }}
+          with_items: "{{ users }}"
 
         - name: Copy .inputrc to root
           get_url:
@@ -544,10 +544,8 @@
             replace: "ExecStart=/sbin/rngd -f -r /dev/urandom"
 
         - name: Set permissions for files in /usr/local/bin
-          file:
-            path: /usr/local/bin/*
-            mode: "a+rx"
-
+          shell: "chmod a+rx /usr/local/bin/*"
+ 
         - name: Copy dummy host keys (ssh_host_ed25519_key)
           copy:
             src: /tmp/ssh_host_ed25519_key

@@ -11,46 +11,6 @@
     "users":             "",
     "vm_name":           ""
   },
-  "provisioners": [
-    {
-      "type":        "file",
-      "source":      "{{user `ssh_pub_keys_dir`}}",
-      "destination": "/usr/tmp/ssh_pub_keys"
-    },
-    {
-      "type":        "file",
-      "source":      "scripts/ps1.sh",
-      "destination": "/etc/profile.d/"
-    },
-    {
-      "type":        "file",
-      "source":      "scripts/usr-local-bin/",
-      "destination": "/usr/local/bin"
-    },
-
-    {
-      "type":        "file",
-      "source":      "host-keys/",
-      "destination": "/tmp"
-    },
-    {
-      "type":            "shell",
-      "environment_vars": [
-        "RHSM_USERNAME={{ user `rhsm_username` }}",
-        "RHSM_PASSWORD={{ user `rhsm_password` }}"
-      ],
-      "execute_command": "echo 'packer' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
-      "script":          "scripts/install-ansible.sh"
-    },
-    {
-      "type":            "ansible-local",
-      "playbook_file":   "ansible/main.yml",
-      "extra_arguments": [
-        "--extra-vars", "'{ {{user `users`}} }'", "--skip-tags", "{{ user `skip_tags` }}"
-      ],
-      "command":         "ANSIBLE_FORCE_COLOR=0 PYTHONUNBUFFERED=1 ansible-playbook"
-    }
-  ],
   "builders": [
     {
       "boot_command": [
@@ -59,7 +19,7 @@
       "boot_wait":            "12s",
       "disk_size":            "{{user `os_disk_size`}}",
       "guest_os_type":        "{{user `guest_os_type`}}",
-      "hard_drive_interface:  "sata",
+      "hard_drive_interface": "sata",
       "headless":             false,
       "http_directory":       "http",
       "http_port_min" :       10010,
@@ -90,6 +50,45 @@
         ["modifyvm", "{{.Name}}", "--vram",   "128"]
       ],
       "vm_name":              "{{user `vm_name`}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type":        "file",
+      "source":      "{{user `ssh_pub_keys_dir`}}",
+      "destination": "/usr/tmp/ssh_pub_keys"
+    },
+    {
+      "type":        "file",
+      "source":      "scripts/ps1.sh",
+      "destination": "/etc/profile.d/"
+    },
+    {
+      "type":        "file",
+      "source":      "scripts/usr-local-bin/",
+      "destination": "/usr/local/bin"
+    },
+    {
+      "type":        "file",
+      "source":      "host-keys/",
+      "destination": "/tmp"
+    },
+    {
+      "type":            "shell",
+      "environment_vars": [
+        "RHSM_USERNAME={{ user `rhsm_username` }}",
+        "RHSM_PASSWORD={{ user `rhsm_password` }}"
+      ],
+      "execute_command": "echo 'packer' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script":          "scripts/install-ansible.sh"
+    },
+    {
+      "type":            "ansible-local",
+      "playbook_file":   "ansible/main.yml",
+      "extra_arguments": [
+        "--extra-vars", "'{ {{user `users`}} }'", "--skip-tags", "{{ user `skip_tags` }}"
+      ],
+      "command":         "ANSIBLE_FORCE_COLOR=0 PYTHONUNBUFFERED=1 ansible-playbook"
     }
   ]
 }
