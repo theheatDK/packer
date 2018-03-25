@@ -4,33 +4,116 @@
 #
 #               YYYY-MM-YY
 # Version 1.0 - 2018-03-20 lorenzenp - Created
+# *************************************************************************
+# Variables
+# *************************************************************************
+# Terminal text effects
+GREEN="${RUN_BY_ANSIBLE:-$(tput setaf 2)}"
+GREEN="${GREEN/$RUN_BY_ANSIBLE/}"
+BOLD="${RUN_BY_ANSIBLE:-$(tput bold)}"
+BOLD="${BOLD/$RUN_BY_ANSIBLE/}"
+RED="${RUN_BY_ANSIBLE:-$(tput setaf 1)}"
+RED="${RED/$RUN_BY_ANSIBLE/}"
+RESET="${RUN_BY_ANSIBLE:-$(tput sgr0)}"
+RESET="${RESET/$RUN_BY_ANSIBLE/}"
 
 GROUP_LIST=$(groups)
 
-if [[ "$GROUP_LIST" =~ cc360 ]]; then
-    title="======================= users ======================="
-    iamback="==================== back to $USER ===================="
-    prompt="Pick a user:"
-    options=(jboss mysql tomcat)
+# *************************************************************************
+# Functions
+# *************************************************************************
+function usage () {
+cat << EOF
+Usage: $0 <file(s)>
 
-    echo "$title"
-    PS3="$prompt "
-    select opt in "${options[@]}" "Quit"; do
-        if (("$REPLY" > 0 && "$REPLY"<= ${#options[@]})); then
-            echo "$opt"
-            break
-        elif (("$REPLY" == ${#options[@]}+1)); then
-            break
-        else
-            echo "Invalid option. Try another one."
-            continue
-        fi
-    done
+Copy CC360 files to one of these locations: 
+/cc360/software/deployments/mysql
+/cc360/software/deployments/tomcat
+/cc360/software/deployments/wildfly
 
-    
-else
+EOF
+exit 1;
+}
+
+function error () {
     echo
-    echo "User not in the cc360 group"
+    echo "${RED}$1${RESET}"
     echo
+}
+
+# *************************************************************************
+# Main
+# *************************************************************************
+
+if [[ ! "$GROUP_LIST" =~ cc360 ]]; then
+    error "User not in the cc360 group"
     exit 1
 fi
+
+if [ "$#" -eq 0 ]; then
+   error "Wrong number of parameters"
+   usage 1
+fi
+
+FILE_COMPLETION=$(compgen -G "$1")
+if [ "$FILE_COMPLETION" = "" ] ; then
+    error "$1 file not found"
+    exit 1
+fi
+
+title="======================= users ======================="
+prompt="Pick a user:"
+options=(jboss mysql tomcat)
+
+echo "$title"
+PS3="$prompt "
+select opt in "${options[@]}" "Quit"; do
+    if (("$REPLY" > 0 && "$REPLY"<= ${#options[@]})); then
+        echo
+        case "$opt" in
+            jboss)
+                echo "Copying files:"
+                for FILE in "$@"
+                do
+                    cp -r --preserve=timestamps $FILE /cc360/software/deployments/jboss
+                    chmod ug+rw /cc360/software/deployments/jboss/$FILE
+                    LS_OUTPUT=$(ls -l /cc360/software/deployments/jboss/$FILE)
+                    echo "  $LS_OUTPUT"
+                done
+                ;;
+
+            mysql)
+                echo "Copying files:"
+                for FILE in "$@"
+                do
+                    cp -r --preserve=timestamps $FILE /cc360/software/deployments/mysql
+                    chmod ug+rw /cc360/software/deployments/mysql/$FILE
+                    LS_OUTPUT=$(ls -l /cc360/software/deployments/mysql/$FILE)
+                    echo "  $LS_OUTPUT"
+                done
+                ;;
+
+            tomcat)
+                echo "Copying files:"
+                for FILE in "$@"
+                do
+                    cp -r --preserve=timestamps $FILE /cc360/software/deployments/tomcat
+                    chmod ug+rw /cc360/software/deployments/tomcat/$FILE
+                    LS_OUTPUT=$(ls -l /cc360/software/deployments/tomcat/$FILE)
+                    echo "  $LS_OUTPUT"
+                done
+                ;;
+                
+                *)
+                    echo "Unknow option"
+                    exit 1
+        esac
+        echo
+        break
+    elif (("$REPLY" == ${#options[@]}+1)); then
+        break
+    else
+        echo "Invalid option. Try another one."
+        continue
+    fi
+done
