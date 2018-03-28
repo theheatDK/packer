@@ -19,14 +19,22 @@ RESET="${RESET/$RUN_BY_ANSIBLE/}"
 
 GROUP_LIST=$(groups)
 
+USER_INPUT=true
+DEPLOYMENT_USER=""
+
 # *************************************************************************
 # Functions
 # *************************************************************************
 function usage () {
 cat << EOF
-Usage: $0 <file(s)>
+Usage: $0 [-j] [-m] [-t] <file(s)>
 
-Copy CC360 files to one of these locations: 
+OPTIONS:
+  -j  Do not ask the user and copy to jboss
+  -m  Do not ask the user and copy to mysql 
+  -t  Do not ask the user and copy to tomcat
+
+Copy CC360 files to one of these locations:
 /cc360/software/deployments/mysql
 /cc360/software/deployments/tomcat
 /cc360/software/deployments/wildfly
@@ -45,6 +53,31 @@ function error () {
 # Main
 # *************************************************************************
 
+# Check options
+while getopts "jmt" opt; do
+   case "$opt" in
+      j)
+          USER_INPUT=false
+          DEPLOYMENT_USER=jboss
+          ;;
+      m)
+          USER_INPUT=false
+          DEPLOYMENT_USER=mysql
+          ;;
+      t)
+          USER_INPUT=false
+          DEPLOYMENT_USER=tomcat
+          ;;
+      \?)
+         echo
+         error "Invalid option: -$OPTARG"
+         usage
+         ;;
+   esac
+done
+
+shift $((OPTIND-1))
+
 if [[ ! "$GROUP_LIST" =~ cc360 ]]; then
     error "User not in the cc360 group"
     exit 1
@@ -61,59 +94,74 @@ if [ "$FILE_COMPLETION" = "" ] ; then
     exit 1
 fi
 
-title="======================= users ======================="
-prompt="Pick a user:"
-options=(jboss mysql tomcat)
+if $USER_INPUT ; then
+    title="======================= users ======================="
+    prompt="Pick a user:"
+    options=(jboss mysql tomcat)
 
-echo "$title"
-PS3="$prompt "
-select opt in "${options[@]}" "Quit"; do
-    if (("$REPLY" > 0 && "$REPLY"<= ${#options[@]})); then
-        echo
-        case "$opt" in
-            jboss)
-                echo "Copying files:"
-                for FILE in "$@"
-                do
-                    cp -r --preserve=timestamps $FILE /cc360/software/deployments/jboss
-                    chmod ug+rw /cc360/software/deployments/jboss/$FILE
-                    LS_OUTPUT=$(ls -l /cc360/software/deployments/jboss/$FILE)
-                    echo "  $LS_OUTPUT"
-                done
-                ;;
+    echo "$title"
+    PS3="$prompt "
+    select opt in "${options[@]}" "Quit"; do
+        if (("$REPLY" > 0 && "$REPLY"<= ${#options[@]})); then
+            echo
+            case "$opt" in
+                jboss)
+                    echo "Copying files:"
+                    for FILE in "$@"
+                    do
+                        cp -r --preserve=timestamps $FILE /cc360/software/deployments/jboss
+                        FILE_NAME=${FILE##*/}
+                        chmod ug+rw /cc360/software/deployments/jboss/$FILE_NAME
+                        LS_OUTPUT=$(ls -l /cc360/software/deployments/jboss/$FILE_NAME)
+                        echo "  $LS_OUTPUT"
+                    done
+                    ;;
 
-            mysql)
-                echo "Copying files:"
-                for FILE in "$@"
-                do
-                    cp -r --preserve=timestamps $FILE /cc360/software/deployments/mysql
-                    chmod ug+rw /cc360/software/deployments/mysql/$FILE
-                    LS_OUTPUT=$(ls -l /cc360/software/deployments/mysql/$FILE)
-                    echo "  $LS_OUTPUT"
-                done
-                ;;
+                mysql)
+                    echo "Copying files:"
+                    for FILE in "$@"
+                    do
+                        cp -r --preserve=timestamps $FILE /cc360/software/deployments/mysql
+                        FILE_NAME=${FILE##*/}
+                        chmod ug+rw /cc360/software/deployments/mysql/$FILE_NAME
+                        LS_OUTPUT=$(ls -l /cc360/software/deployments/mysql/$FILE_NAME)
+                        echo "  $LS_OUTPUT"
+                    done
+                    ;;
 
-            tomcat)
-                echo "Copying files:"
-                for FILE in "$@"
-                do
-                    cp -r --preserve=timestamps $FILE /cc360/software/deployments/tomcat
-                    chmod ug+rw /cc360/software/deployments/tomcat/$FILE
-                    LS_OUTPUT=$(ls -l /cc360/software/deployments/tomcat/$FILE)
-                    echo "  $LS_OUTPUT"
-                done
-                ;;
-                
-                *)
-                    echo "Unknow option"
-                    exit 1
-        esac
-        echo
-        break
-    elif (("$REPLY" == ${#options[@]}+1)); then
-        break
-    else
-        echo "Invalid option. Try another one."
-        continue
-    fi
-done
+                tomcat)
+                    echo "Copying files:"
+                    for FILE in "$@"
+                    do
+                        cp -r --preserve=timestamps $FILE /cc360/software/deployments/tomcat
+                        FILE_NAME=${FILE##*/}
+                        chmod ug+rw /cc360/software/deployments/tomcat/$FILE_NAME
+                        LS_OUTPUT=$(ls -l /cc360/software/deployments/tomcat/$FILE_NAME)
+                        echo "  $LS_OUTPUT"
+                    done
+                    ;;
+
+                    *)
+                        echo "Unknow option"
+                        exit 1
+            esac
+            echo
+            break
+        elif (("$REPLY" == ${#options[@]}+1)); then
+            break
+        else
+            echo "Invalid option. Try another one."
+            continue
+        fi
+    done
+else
+    echo "Copying files:"
+    for FILE in "$@"
+    do
+        cp -r --preserve=timestamps $FILE /cc360/software/deployments/$DEPLOYMENT_USER
+        FILE_NAME=${FILE##*/}
+        chmod ug+rw /cc360/software/deployments/$DEPLOYMENT_USER/$FILE_NAME
+        LS_OUTPUT=$(ls -l /cc360/software/deployments/$DEPLOYMENT_USER/$FILE_NAME)
+        echo "  $LS_OUTPUT"
+    done
+fi
