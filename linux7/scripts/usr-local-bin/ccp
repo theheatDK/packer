@@ -111,8 +111,8 @@ if $USER_INPUT ; then
                     do
                         cp -r --preserve=timestamps $FILE /cc360/software/deployments/jboss
                         FILE_NAME=${FILE##*/}
-                        chmod ug+rw /cc360/software/deployments/jboss/$FILE_NAME
-                        LS_OUTPUT=$(ls -l /cc360/software/deployments/jboss/$FILE_NAME)
+                        chmod -R ug+rwx /cc360/software/deployments/jboss/$FILE_NAME
+                        LS_OUTPUT=$(ls -Rl /cc360/software/deployments/jboss/$FILE_NAME)
                         echo "  $LS_OUTPUT"
                     done
                     ;;
@@ -123,8 +123,8 @@ if $USER_INPUT ; then
                     do
                         cp -r --preserve=timestamps $FILE /cc360/software/deployments/mysql
                         FILE_NAME=${FILE##*/}
-                        chmod ug+rw /cc360/software/deployments/mysql/$FILE_NAME
-                        LS_OUTPUT=$(ls -l /cc360/software/deployments/mysql/$FILE_NAME)
+                        chmod -R ug+rwx /cc360/software/deployments/mysql/$FILE_NAME
+                        LS_OUTPUT=$(ls -Rl /cc360/software/deployments/mysql/$FILE_NAME)
                         echo "  $LS_OUTPUT"
                     done
                     ;;
@@ -135,8 +135,8 @@ if $USER_INPUT ; then
                     do
                         cp -r --preserve=timestamps $FILE /cc360/software/deployments/tomcat
                         FILE_NAME=${FILE##*/}
-                        chmod ug+rw /cc360/software/deployments/tomcat/$FILE_NAME
-                        LS_OUTPUT=$(ls -l /cc360/software/deployments/tomcat/$FILE_NAME)
+                        chmod -R ug+rwx /cc360/software/deployments/tomcat/$FILE_NAME
+                        LS_OUTPUT=$(ls -Rl /cc360/software/deployments/tomcat/$FILE_NAME)
                         echo "  $LS_OUTPUT"
                     done
                     ;;
@@ -160,8 +160,8 @@ else
     do
         cp -r --preserve=timestamps $FILE /cc360/software/deployments/$DEPLOYMENT_USER
         FILE_NAME=${FILE##*/}
-        chmod ug+rw /cc360/software/deployments/$DEPLOYMENT_USER/$FILE_NAME
-        LS_OUTPUT=$(ls -l /cc360/software/deployments/$DEPLOYMENT_USER/$FILE_NAME)
+        chmod -R ug+rwx /cc360/software/deployments/$DEPLOYMENT_USER/$FILE_NAME
+        LS_OUTPUT=$(ls -Rl /cc360/software/deployments/$DEPLOYMENT_USER/$FILE_NAME)
         echo "  $LS_OUTPUT"
     done
 fi
